@@ -1,0 +1,50 @@
+{
+  "tesserae_compat": "1.x",
+  "name": "Weather, Hourly Card",
+  "version": "0.1.0",
+  "kind": "widget",
+  "description": "Today's hourly forecast card: place, current temperature, condition, feels-like, chance of rain, today's high / low and the next hours with icons, plus an 'As of' time since the panel only refreshes periodically. Data from Open-Meteo (no API key).",
+  "icon": "ph-cloud-sun",
+  "category": "weather",
+  "locales": ["en"],
+  "supports": { "sizes": ["sm", "md", "lg"] },
+  "cell_options": [
+    {
+      "name": "location",
+      "type": "location_search",
+      "label": "Place",
+      "default": "",
+      "help": "Search a city, or paste a 'lat, lon' pair, to set the location."
+    },
+    {
+      "name": "label",
+      "type": "string",
+      "label": "Place name",
+      "default": "",
+      "help": "Auto-filled from the place you pick; edit to customise."
+    },
+    {
+      "name": "hours",
+      "type": "select",
+      "label": "Hours shown",
+      "default": "6",
+      "choices": [
+        { "value": "4", "label": "4 hours" },
+        { "value": "5", "label": "5 hours" },
+        { "value": "6", "label": "6 hours" },
+        { "value": "8", "label": "8 hours" }
+      ]
+    },
+    {
+      "name": "units",
+      "type": "select",
+      "label": "Units",
+      "default": "imperial",
+      "choices": [
+        { "value": "metric", "label": "Metric (°C)" },
+        { "value": "imperial", "label": "Imperial (°F)" }
+      ]
+    }
+  ],
+  "render": { "dither": "none", "needs_network": true }
+}
