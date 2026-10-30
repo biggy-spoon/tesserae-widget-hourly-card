@@ -16,6 +16,12 @@ clock by the time you look at it.
 - **Place name**: shown at the top left; auto-filled from the place you pick.
 - **Hours shown**: 4, 5, 6 (default) or 8 hourly columns.
 - **Units**: Imperial (°F, default) or Metric (°C).
+- **Clock**: 12-hour (`3 PM`, default) or 24-hour (`15:00`), for the hourly
+  columns and the "As of" time.
+
+Every label goes through Tesserae's `ctx.t`, with the English strings in
+`strings/en.json`, so a translation is a matter of adding `strings/<locale>.json`
+(and listing the locale in `plugin.json`).
 
 The text uses the dashboard's own font (the theme's `--font-family`), so the
 card matches whatever the rest of the dashboard looks like.

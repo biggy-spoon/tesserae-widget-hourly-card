@@ -4,6 +4,7 @@ shapes Open-Meteo's answer into the card's fields."""
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -56,6 +57,29 @@ def test_weather_hourly_card_renders(client: FlaskClient, size: str) -> None:
     assert '"asof_hour": 9' in body or '"asof_hour":9' in body
     # The window starts at the current hour (09:00), not midnight.
     assert '"hour": 9' in body or '"hour":9' in body
+
+
+def test_clock_option_and_translation_keys(client: FlaskClient) -> None:
+    opts = (
+        '{"location":{"name":"Springfield","latitude":40.0,"longitude":-89.0},'
+        '"label":"Springfield","units":"metric","time_format":"24h"}'
+    )
+    with patch("urllib.request.urlopen", return_value=_FakeResp()):
+        resp = client.get(f"/_test/render?plugin=weather_hourly_card&size=lg&opts={opts}")
+    body = resp.get_data(as_text=True)
+    assert '"time_format": "24h"' in body or '"time_format":"24h"' in body
+    # The condition travels as a strings key (3 = overcast) plus English text.
+    assert '"cond_key": "cond_cloudy"' in body or '"cond_key":"cond_cloudy"' in body
+
+
+def test_manifest_declares_network_and_clock() -> None:
+    manifest = json.loads((Path(__file__).parent.parent / "plugin.json").read_text())
+    assert manifest["requires"] == ["network:api.open-meteo.com"]
+    clock = next(o for o in manifest["cell_options"] if o["name"] == "time_format")
+    assert {c["value"] for c in clock["choices"]} == {"12h", "24h"}
+    strings = json.loads((Path(__file__).parent.parent / "strings" / "en.json").read_text())
+    for key in ("title", "feels", "as_of", "high", "low", "am", "pm", "pick_location", "cond_cloudy"):
+        assert key in strings
 
 
 def test_no_location_is_an_empty_state(client: FlaskClient) -> None:

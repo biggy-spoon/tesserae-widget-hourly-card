@@ -17,31 +17,43 @@ function esc(s) {
 
 const deg = (v) => (v == null ? "-" : Math.round(Number(v)) + "°");
 
-function hourLabel(h) {
-  const ap = h >= 12 ? "PM" : "AM";
+const pad2 = (n) => String(n ?? 0).padStart(2, "0");
+
+// "10 AM" on a 12-hour clock (AM / PM come from the locale's strings), "10:00"
+// on a 24-hour one.
+function hourLabel(h, is24, t) {
+  if (is24) return `${pad2(h)}:00`;
+  const ap = h >= 12 ? t("pm", "PM") : t("am", "AM");
   return `${h % 12 === 0 ? 12 : h % 12} ${ap}`;
 }
 
-function asOf(h, m) {
-  if (h == null) return "";
-  const ap = h >= 12 ? "PM" : "AM";
-  return `As of ${h % 12 === 0 ? 12 : h % 12}:${String(m ?? 0).padStart(2, "0")} ${ap}`;
+function clockTime(h, m, is24, t) {
+  if (is24) return `${pad2(h)}:${pad2(m)}`;
+  const ap = h >= 12 ? t("pm", "PM") : t("am", "AM");
+  return `${h % 12 === 0 ? 12 : h % 12}:${pad2(m)} ${ap}`;
 }
 
 export default function render(shadow, ctx) {
   const data = ctx?.data ?? {};
+  const t = ctx?.t || ((key, fallback) => fallback ?? key);
+  const is24 = data.time_format === "24h";
   const SHEET = '<link rel="stylesheet" href="/static/style/spectra-widgets.css">';
   if (data.error) {
+    const msg = data.error_key ? t(data.error_key, data.error) : data.error;
     shadow.innerHTML = `${SHEET}
-      <div class="w"><div class="w-title"><i class="ph-bold ph-warning-circle"></i><h3>Hourly forecast</h3></div>
-      <div class="w-body"><p class="u-muted">${esc(data.error)}</p></div></div>`;
+      <div class="w"><div class="w-title"><i class="ph-bold ph-warning-circle"></i><h3>${esc(t("title", "Hourly forecast"))}</h3></div>
+      <div class="w-body"><p class="u-muted">${esc(msg)}</p></div></div>`;
     return;
   }
 
+  const cond = data.cond_key ? t(data.cond_key, data.cond) : (data.cond || "");
+  const asOfText = data.asof_hour == null
+    ? ""
+    : `${t("as_of", "As of")} ${clockTime(data.asof_hour, data.asof_minute, is24, t)}`;
   const slots = Array.isArray(data.slots) ? data.slots : [];
   const cols = slots.map((s) => `
     <div class="hc-col">
-      <span class="hc-h">${esc(hourLabel(s.hour))}</span>
+      <span class="hc-h">${esc(hourLabel(s.hour, is24, t))}</span>
       <i class="ph-bold ${PH[s.icon] || "ph-cloud"}"></i>
       <span class="hc-t">${esc(deg(s.temp))}</span>
     </div>`).join("");
@@ -77,7 +89,7 @@ export default function render(shadow, ctx) {
           <div class="hc-place">${esc(data.label || "")}</div>
           <div class="hc-nowrow">
             <div class="hc-now">${esc(deg(data.now))}</div>${
-              data.feels != null ? `<div class="hc-feels">Feels ${esc(deg(data.feels))}</div>` : ""}
+              data.feels != null ? `<div class="hc-feels">${esc(t("feels", "Feels"))} ${esc(deg(data.feels))}</div>` : ""}
           </div>
         </div>
         <div class="hc-right">
@@ -85,12 +97,12 @@ export default function render(shadow, ctx) {
           <div class="hc-cond-row">${
             data.precip != null
               ? `<span class="hc-precip"><i class="ph-bold ph-drop"></i>${esc(data.precip)}%</span>` : ""}
-            <div class="hc-cond">${esc(data.cond || "")}</div>
+            <div class="hc-cond">${esc(cond)}</div>
           </div>
-          <div class="hc-hl">H:${esc(deg(data.hi))} L:${esc(deg(data.lo))}</div>
+          <div class="hc-hl">${esc(t("high", "H"))}:${esc(deg(data.hi))} ${esc(t("low", "L"))}:${esc(deg(data.lo))}</div>
         </div>
       </div>
       <div class="hc-row">${cols}</div>
-      <div class="hc-asof">${esc(asOf(data.asof_hour, data.asof_minute))}</div>
+      <div class="hc-asof">${esc(asOfText)}</div>
     </div></div>`;
 }
